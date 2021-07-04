@@ -1,0 +1,160 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/pprof"
+
+	health "github.com/AppsFlyer/go-sundheit"
+	healthhttp "github.com/AppsFlyer/go-sundheit/http"
+	"github.com/go-chi/chi"
+
+	"github.com/rs/cors"
+	"github.com/rs/zerolog"
+)
+
+const (
+	// FlagPortName is the name for the flag that's used for serving the application
+	FlagPortName = "PORT"
+
+	// FlagPortDefault is the default value for the application web server
+	FlagPortDefault = 8080
+
+	// FlagAdminPortName is the name for the flag that's used for serving the application's administrative endpoints
+	FlagAdminPortName = "ADMIN_PORT"
+
+	// FlagAdminPortDefault is the default value for the application web server's administrative port
+	FlagAdminPortDefault = 8081
+
+	FlagDBHost        = "DB_HOST"
+	FlagDBHostDefault = "postgresql"
+
+	FlagDBUser        = "DB_USER"
+	FlagDBUserDefault = "postgres"
+
+	FlagDBPassword        = "DB_PASSWORD"
+	FlagDBPasswordDefault = "local_password"
+
+	FlagDBName        = "DB_NAME"
+	FlagDBNameDefault = "postgres"
+
+	FlagDBSSLMode        = "DB_SSL_MODE"
+	FlagDBSSLModeDefault = "disable"
+)
+
+// Config is all configuration for running the application.
+//
+// We use a config struct so that we can statically type and check configuration values
+type Config struct {
+	// Port is the HTTP server port
+	Port int
+
+	// AdminPort is the HTTP server port for internal use
+	AdminPort int
+
+	DBHost     string
+	DBUser     string
+	DBPassword string
+	DBName     string
+	DBSSLMode  string
+}
+
+// Server represents the service itself and all of its dependencies.
+//
+// This pattern is heavily based on the following blog post:
+// https://pace.dev/blog/2018/05/09/how-I-write-http-services-after-eight-years.html
+type Server struct {
+	adminServer *http.Server
+	config      *Config
+	logger      zerolog.Logger
+	router      *chi.Mux
+	server      *http.Server
+}
+
+// ServerOption lets you functionally control construction of the web server
+type ServerOption func(s *Server)
+
+// NewServer creates a new api server
+func NewServer(cfg *Config, options ...ServerOption) *Server {
+	router := chi.NewRouter()
+	s := &Server{
+		config: cfg,
+		logger: zerolog.New(ioutil.Discard),
+		router: router,
+		server: &http.Server{
+			Addr:    fmt.Sprintf(":%d", cfg.Port),
+			Handler: cors.Default().Handler(router),
+		},
+	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	s.registerRoutes()
+
+	// We register this last so that we can use things like s.Logger inside of the `createAdminServer`
+	if s.adminServer == nil {
+		s.adminServer = s.createAdminServer()
+	}
+
+	return s
+}
+
+// Start starts the main web server and starts a goroutine with the admin
+// server
+func (s *Server) Start() error {
+	go s.adminServer.ListenAndServe()
+	return s.server.ListenAndServe()
+}
+
+// Shutdown calls for a graceful shutdown on the server
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.adminServer.Shutdown(ctx)
+	return s.server.Shutdown(ctx)
+}
+
+func (s *Server) createAdminServer() *http.Server {
+	// Healthchecks
+	h := health.New()
+
+	// err := h.RegisterCheck(&health.Config{
+	// 	Check: &checks.CustomCheck{
+	// 		CheckName: "db.ping",
+	// 		CheckFunc: func() (details interface{}, err error) {
+	// 			return s.db.Ping(context.Background())
+	// 		},
+	// 	},
+	// 	ExecutionPeriod: 15 * time.Second,
+	// })
+
+	// if err != nil {
+	// 	s.logger.Panic().Err(err).Msg("couldn't register healthcheck")
+	// }
+
+	mux := http.NewServeMux()
+	mux.Handle("/healthz", healthhttp.HandleHealthJSON(h))
+
+	// pprof
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	adminSrv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", s.config.AdminPort),
+		Handler: mux,
+	}
+
+	return adminSrv
+}
+
+// WithLogger sets the logger of the server
+func WithLogger(logger zerolog.Logger) ServerOption {
+	return func(s *Server) {
+		s.logger = logger
+	}
+}
