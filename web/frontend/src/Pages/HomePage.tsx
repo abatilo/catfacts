@@ -36,6 +36,7 @@ export default function HomePage() {
                   Phone number
                 </label>
                 <input
+                  autoFocus
                   type="tel"
                   name="phone"
                   id="phone"
