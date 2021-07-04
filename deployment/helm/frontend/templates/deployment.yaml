@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "frontend.fullname" . }}
+  labels:
+    {{- include "frontend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "frontend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "frontend.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: "default"
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}
+          {{- if .Values.image.tag -}}
+            :{{ .Values.image.tag }}
+          {{- end }}"
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sleep", "10"]
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP

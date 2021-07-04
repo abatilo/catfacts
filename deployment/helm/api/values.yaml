@@ -1,0 +1,22 @@
+replicaCount: 1
+
+image:
+  registry: localhost:37893
+  repository: api
+  tag: ""
+
+initContainers:
+  - name: check-db-ready
+    # Should match the helm chart used in local development
+    image: docker.io/bitnami/postgresql:11.11.0-debian-10-r24
+    command: [
+        "sh",
+        "-c",
+        "until pg_isready --dbname=postgres --host=postgresql --port=5432 --username=postgres;
+        do echo waiting for database; sleep 2; done;",
+      ]
+
+env: {}
+
+entryPoints:
+  - web

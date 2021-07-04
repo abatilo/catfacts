@@ -1,0 +1,9 @@
+replicaCount: 1
+
+image:
+  registry: localhost:37893
+  repository: frontend
+  tag: ""
+
+entryPoints:
+  - web

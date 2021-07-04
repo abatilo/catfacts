@@ -1,0 +1,19 @@
+{
+  "Extensions": [
+    {
+      "Name": "helm_remote",
+      "ExtensionRegistry": "https://github.com/tilt-dev/tilt-extensions",
+      "TimeFetched": "2021-07-04T16:52:08.784908384-06:00"
+    },
+    {
+      "Name": "global_vars",
+      "ExtensionRegistry": "https://github.com/tilt-dev/tilt-extensions",
+      "TimeFetched": "2021-07-04T16:52:09.857143616-06:00"
+    },
+    {
+      "Name": "restart_process",
+      "ExtensionRegistry": "https://github.com/tilt-dev/tilt-extensions",
+      "TimeFetched": "2021-07-04T16:52:10.744301524-06:00"
+    }
+  ]
+}

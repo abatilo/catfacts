@@ -1,0 +1,82 @@
+allow_k8s_contexts("kind-cf")
+
+# Allow for installing other helm charts
+load("ext://helm_remote", "helm_remote")
+
+# Restart golang process without needing to install a process watcher
+load("ext://restart_process", "docker_build_with_restart")
+
+helm_remote("postgresql",
+  repo_name="bitnami",
+  repo_url="https://charts.bitnami.com/bitnami",
+  # This chart version pulls in app version 11.11.0
+  version="10.3.11",
+  set=[
+    "postgresqlPassword=local_password",
+    "postgresqlPostgresPassword=local_password",
+    "rbac.create=true"
+  ]
+)
+
+helm_remote("traefik",
+  repo_name="traefik",
+            repo_url="https://helm.traefik.io/traefik",
+  version="9.12.3",
+  set=[
+    "service.type=ClusterIP"
+  ]
+)
+
+# When running locally through Tilt, we want to run in dev mode
+docker_build_with_restart(
+  ref="api",
+  context="../", # From location of Tiltfile
+  dockerfile="./Dockerfile.api",
+  live_update=[
+    # From location of Tiltfile
+    sync("../", "/app/"),
+
+    # Ran within container
+    run("cd /app/ && go mod download", trigger=["./go.sum"]),
+  ],
+  # From docker context
+  ignore=["web/"],
+
+  # Override Dockerfile so that we stay on the build layer with dev
+  # dependencies and hot reloading
+  target="build",
+  entrypoint="go run cmd/cf.go api",
+)
+
+# When running locally through Tilt, we want to run in dev mode
+docker_build(
+  ref="frontend",
+  context="../web/frontend",
+  dockerfile="./Dockerfile.frontend",
+  live_update=[
+    sync("../web/frontend/", "/app/"),
+    run("cd /app && yarn install", trigger=["../web/frontend/yarn.lock"]),
+  ],
+
+  # Override Dockerfile so that we stay on the build layer with dev
+  # dependencies and hot reloading
+  target="build",
+  entrypoint="yarn start",
+)
+
+api_yaml = helm(
+  "../deployment/helm/api/",
+  name="api",
+  values=["../deployment/helm/api/values.yaml"],
+)
+k8s_yaml(api_yaml)
+
+frontend_yaml = helm(
+  "../deployment/helm/frontend/",
+  name="frontend",
+  values=["../deployment/helm/frontend/values.yaml"],
+)
+k8s_yaml(frontend_yaml)
+
+k8s_resource("postgresql-postgresql", port_forwards=["5432"])
+k8s_resource("traefik", port_forwards=["8000", "9000"])
