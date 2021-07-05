@@ -20,4 +20,5 @@ jobs:
           AWS_DEFAULT_REGION: us-west-2
         run: |
           aws eks update-kubeconfig --name abatilo-cloud-tf
-          pulumi -s prod --cwd deployment/pulumi up --yes --skip-preview --suppress-outputs --suppress-permalink
+          kubectl get pods --all-namespaces
+          # pulumi -s prod --cwd deployment/pulumi up --yes --skip-preview --suppress-outputs --suppress-permalink
