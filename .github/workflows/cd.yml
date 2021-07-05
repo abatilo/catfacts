@@ -13,15 +13,12 @@ jobs:
       - working-directory: deployment/pulumi
         run: |
           yarn install --frozen-lockfile
-      - env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+      - name: Deploy
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-west-2
         run: |
-          aws sts get-caller-identity
           aws eks update-kubeconfig --name abatilo-cloud-tf
-
-          kubectl config get-contexts
           kubectl get pods
-          # pulumi -s prod --cwd deployment/pulumi up --yes --skip-preview --suppress-outputs --suppress-permalink
