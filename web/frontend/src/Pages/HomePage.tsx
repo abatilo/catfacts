@@ -1,4 +1,23 @@
+import { useCallback, useState } from "react";
+
 export default function HomePage() {
+  const [phoneNumber, setPhoneNumberInput] = useState("");
+
+  const submit = useCallback(
+    async (event) => {
+      event.preventDefault();
+      await fetch("/api/register", {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      // setOpen(true);
+    },
+    [phoneNumber]
+  );
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="pb-32 bg-yellow-600">
@@ -31,7 +50,7 @@ export default function HomePage() {
               <p className="text-base font-medium text-gray-900">
                 Sign up to start getting your facts
               </p>
-              <form action="#" method="POST" className="mt-3 sm:flex">
+              <form onSubmit={submit} className="mt-3 sm:flex">
                 <label htmlFor="phone" className="sr-only">
                   Phone number
                 </label>
@@ -42,6 +61,7 @@ export default function HomePage() {
                   id="phone"
                   className="block w-full py-3 text-base placeholder-gray-500 border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 sm:flex-1"
                   placeholder="Enter your phone number"
+                  onChange={(e) => setPhoneNumberInput(e.target.value)}
                 />
                 <button
                   type="submit"
