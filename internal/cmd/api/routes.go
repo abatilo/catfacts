@@ -62,13 +62,20 @@ func (s *Server) receive() http.HandlerFunc {
 			target.Active = true
 			s.db.Save(&target)
 
-			msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts"
+			msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
 			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 				From: &s.config.TwilioPhoneNumber,
 				To:   &from,
 				Body: &msg,
 			})
 
+			randomFact := facts.RandomFact()
+			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+				From: &s.config.TwilioPhoneNumber,
+				To:   &from,
+				Body: &randomFact,
+			})
+		case "now":
 			randomFact := facts.RandomFact()
 			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 				From: &s.config.TwilioPhoneNumber,
