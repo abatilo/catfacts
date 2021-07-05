@@ -1,3 +1,9 @@
-nodejs 15.14.0
-yarn 1.22.10
+ctlptl 0.5.5
 golang 1.15.13
+helm 3.5.4
+kind 0.10.0
+kubectl 1.20.8
+nodejs 15.14.0
+pulumi 3.6.0
+tilt 0.21.1
+yarn 1.22.10
