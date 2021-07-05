@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/abatilo/catfacts/cmd/api"
+	"github.com/abatilo/catfacts/cmd/blast"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,5 +29,6 @@ func main() {
 	logger := zerolog.New(os.Stdout)
 
 	rootCmd.AddCommand(api.Cmd(logger))
+	rootCmd.AddCommand(blast.Cmd(logger))
 	rootCmd.Execute()
 }

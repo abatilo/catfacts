@@ -71,6 +71,56 @@ class API extends pulumi.ComponentResource {
       },
       { ...defaultOptions, dependsOn: [postgres] }
     );
+
+    // Create an example CronJob.
+    const cronBlast = new k8s.batch.v1beta1.CronJob(
+      name,
+      {
+        spec: {
+          schedule: "10 18 * * *",
+          jobTemplate: {
+            spec: {
+              template: {
+                spec: {
+                  containers: [
+                    {
+                      env: [
+                        {
+                          name: "CF_TWILIO_ACCOUNT_SID",
+                          value: config.requireSecret("twilio_account_sid"),
+                        },
+                        {
+                          name: "CF_TWILIO_AUTH_TOKEN",
+                          value: config.requireSecret("twilio_auth_token"),
+                        },
+                        {
+                          name: "CF_TWILIO_PHONE_NUMBER",
+                          value: config.requireSecret("twilio_phone_number"),
+                        },
+                        {
+                          name: "CF_DB_HOST",
+                          value: "postgres-postgresql",
+                        },
+                        {
+                          name: "CF_DB_PASSWORD",
+                          value: config.requireSecret("postgresPassword"),
+                        },
+                      ],
+                      name: "blast",
+                      image,
+                      command: ["cf"],
+                      args: ["blast"],
+                    },
+                  ],
+                  restartPolicy: "Never",
+                },
+              },
+            },
+          },
+        },
+      },
+      { ...defaultOptions, dependsOn: [postgres, api] }
+    );
   }
 }
 export default API;
