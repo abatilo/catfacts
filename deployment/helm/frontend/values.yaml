@@ -7,3 +7,6 @@ image:
 
 entryPoints:
   - web
+
+ingress:
+  match: {}

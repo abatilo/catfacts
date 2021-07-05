@@ -1,6 +1,6 @@
 module github.com/abatilo/catfacts
 
-go 1.15
+go 1.16
 
 require (
 	github.com/AppsFlyer/go-sundheit v0.2.0

@@ -20,3 +20,6 @@ env: {}
 
 entryPoints:
   - web
+
+ingress:
+  match: {}
