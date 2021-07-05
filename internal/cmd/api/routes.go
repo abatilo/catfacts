@@ -11,7 +11,8 @@ import (
 
 	"github.com/abatilo/catfacts/internal/model"
 	"github.com/go-chi/chi"
-	openapi "github.com/twilio/twilio-go/rest/lookups/v1"
+	tw_api "github.com/twilio/twilio-go/rest/api/v2010"
+	tw_lookups "github.com/twilio/twilio-go/rest/lookups/v1"
 	"gorm.io/gorm"
 )
 
@@ -72,7 +73,7 @@ func (s *Server) register() http.HandlerFunc {
 
 		// Sanitize phone number
 		countryCode := "US"
-		fetchPhoneNumberResponse, err := s.twilioClient.LookupsV1.FetchPhoneNumber(req.PhoneNumber, &openapi.FetchPhoneNumberParams{
+		fetchPhoneNumberResponse, err := s.twilioClient.LookupsV1.FetchPhoneNumber(req.PhoneNumber, &tw_lookups.FetchPhoneNumberParams{
 			CountryCode: &countryCode,
 		})
 
@@ -93,9 +94,16 @@ func (s *Server) register() http.HandlerFunc {
 			s.db.Create(&target)
 		}
 
-		json.NewEncoder(w).Encode(&registerResponse{
-			PhoneNumber: target.PhoneNumber,
-			Active:      target.Active,
-		})
+		// Send confirmation text
+		if !target.Active {
+			msg := "You've just been registered for Aaron Batilo's CatFacts! Reply with \"Y\" if you'd like to confirm that you want to receive CatFacts!"
+			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+				From: &s.config.TwilioPhoneNumber,
+				To:   &sanitized,
+				Body: &msg,
+			})
+		}
+
+		fmt.Fprintf(w, "")
 	}
 }
