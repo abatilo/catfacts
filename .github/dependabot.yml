@@ -1,0 +1,28 @@
+# Basic set up for three package managers
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/build"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/web/frontend"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/deployment/pulumi"
+    schedule:
+      interval: "daily"
