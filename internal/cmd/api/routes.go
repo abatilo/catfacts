@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/abatilo/catfacts/internal/facts"
 	"github.com/abatilo/catfacts/internal/model"
 	"github.com/go-chi/chi"
 	tw_api "github.com/twilio/twilio-go/rest/api/v2010"
@@ -66,6 +67,13 @@ func (s *Server) receive() http.HandlerFunc {
 				From: &s.config.TwilioPhoneNumber,
 				To:   &from,
 				Body: &msg,
+			})
+
+			randomFact := facts.RandomFact()
+			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+				From: &s.config.TwilioPhoneNumber,
+				To:   &from,
+				Body: &randomFact,
 			})
 		}
 
