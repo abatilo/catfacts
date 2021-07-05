@@ -1,0 +1,16 @@
+name: "Continuous Deployment"
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/install@v1
+      - env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: |
+          pulumi -s prod --cwd deployment/pulumi up --yes --skip-preview --suppress-outputs --suppress-permalink
