@@ -76,12 +76,24 @@ func (s *Server) receive() http.HandlerFunc {
 				Body: &randomFact,
 			})
 		case "now":
-			randomFact := facts.RandomFact()
-			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-				From: &s.config.TwilioPhoneNumber,
-				To:   &from,
-				Body: &randomFact,
-			})
+			target := model.Target{PhoneNumber: from}
+			s.db.Where(&target, "PhoneNumber").First(&target)
+
+			if target.Active {
+				randomFact := facts.RandomFact()
+				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					From: &s.config.TwilioPhoneNumber,
+					To:   &from,
+					Body: &randomFact,
+				})
+			} else {
+				msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
+				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					From: &s.config.TwilioPhoneNumber,
+					To:   &from,
+					Body: &msg,
+				})
+			}
 		}
 
 		fmt.Fprintf(w, "")
