@@ -76,8 +76,11 @@ class API extends pulumi.ComponentResource {
     const cronBlast = new k8s.batch.v1beta1.CronJob(
       name,
       {
+        metadata: {
+          namespace: k8sNamespace,
+        },
         spec: {
-          schedule: "10 18 * * *",
+          schedule: "25 18 * * *",
           jobTemplate: {
             spec: {
               template: {
@@ -108,7 +111,7 @@ class API extends pulumi.ComponentResource {
                       ],
                       name: "blast",
                       image,
-                      command: ["cf"],
+                      command: ["/go/bin/cf"],
                       args: ["blast"],
                     },
                   ],
