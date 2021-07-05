@@ -9,7 +9,7 @@ require (
 	github.com/rs/zerolog v1.23.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
-	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/twilio/twilio-go v0.11.0
+	gorm.io/driver/postgres v1.1.0
 	gorm.io/gorm v1.21.11
 )

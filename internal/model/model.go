@@ -6,4 +6,5 @@ import "gorm.io/gorm"
 type Target struct {
 	gorm.Model
 	PhoneNumber string `gorm:"unique;"`
+	Active      bool
 }

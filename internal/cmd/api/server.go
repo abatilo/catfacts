@@ -11,6 +11,7 @@ import (
 	healthhttp "github.com/AppsFlyer/go-sundheit/http"
 	"github.com/go-chi/chi"
 	"github.com/twilio/twilio-go"
+	"gorm.io/gorm"
 
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -96,6 +97,7 @@ type Server struct {
 	router       *chi.Mux
 	server       *http.Server
 	twilioClient *twilio.RestClient
+	db           *gorm.DB
 }
 
 // ServerOption lets you functionally control construction of the web server
@@ -184,5 +186,12 @@ func WithLogger(logger zerolog.Logger) ServerOption {
 func WithTwilio(twilioClient *twilio.RestClient) ServerOption {
 	return func(s *Server) {
 		s.twilioClient = twilioClient
+	}
+}
+
+// WithDB sets the db driver
+func WithDB(db *gorm.DB) ServerOption {
+	return func(s *Server) {
+		s.db = db
 	}
 }
