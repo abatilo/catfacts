@@ -6,10 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
-	"time"
 
 	gosundheit "github.com/AppsFlyer/go-sundheit"
-	"github.com/AppsFlyer/go-sundheit/checks"
 	healthhttp "github.com/AppsFlyer/go-sundheit/http"
 	"github.com/go-chi/chi"
 	"github.com/twilio/twilio-go"
@@ -147,15 +145,15 @@ func (s *Server) createAdminServer() *http.Server {
 	// Healthchecks
 	h := gosundheit.New()
 
-	err := h.RegisterCheck(
-		checks.NewHostResolveCheck("api.twilio.com", 1),
-		gosundheit.ExecutionPeriod(60*time.Second),
-		gosundheit.ExecutionTimeout(2*time.Second),
-	)
+	// err := h.RegisterCheck(
+	// 	checks.NewHostResolveCheck("api.twilio.com", 1),
+	// 	gosundheit.ExecutionPeriod(60*time.Second),
+	// 	gosundheit.ExecutionTimeout(2*time.Second),
+	// )
 
-	if err != nil {
-		s.logger.Panic().Err(err).Msg("couldn't register healthcheck")
-	}
+	// if err != nil {
+	// 	s.logger.Panic().Err(err).Msg("couldn't register healthcheck")
+	// }
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", healthhttp.HandleHealthJSON(h))
