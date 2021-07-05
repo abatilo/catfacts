@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^9",
-    "postcss": "^8",
+    "postcss": "^7",
     "prettier": "^2.3.2",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat"
   }
