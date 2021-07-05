@@ -26,6 +26,7 @@ func Cmd(logger zerolog.Logger) *cobra.Command {
 			cfg := &Config{
 				Port:              viper.GetInt(FlagPortName),
 				AdminPort:         viper.GetInt(FlagAdminPortName),
+				TwilioHost:        viper.GetString(FlagTwilioHostName),
 				TwilioAccountSID:  viper.GetString(FlagTwilioAccountSIDName),
 				TwilioAuthToken:   viper.GetString(FlagTwilioAuthTokenName),
 				TwilioPhoneNumber: viper.GetString(FlagTwilioPhoneNumberName),
@@ -43,6 +44,9 @@ func Cmd(logger zerolog.Logger) *cobra.Command {
 
 	cmd.PersistentFlags().Int(FlagAdminPortName, FlagAdminPortDefault, "The admin port to run the administrative web server on")
 	viper.BindPFlag(FlagAdminPortName, cmd.PersistentFlags().Lookup(FlagAdminPortName))
+
+	cmd.PersistentFlags().String(FlagTwilioHostName, FlagTwilioHostDefault, "Host used by Twilio webhook")
+	viper.BindPFlag(FlagTwilioHostName, cmd.PersistentFlags().Lookup(FlagTwilioHostName))
 
 	cmd.PersistentFlags().String(FlagTwilioAccountSIDName, FlagTwilioAccountSIDDefault, "Twilio account string ID")
 	viper.BindPFlag(FlagTwilioAccountSIDName, cmd.PersistentFlags().Lookup(FlagTwilioAccountSIDName))

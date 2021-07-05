@@ -6,5 +6,7 @@ config:
     secure: AAABAEi48qjGKlIlom8JkyWOnh0BR5vTa4Cp68ehrAdDdWwcGtxl7n0YiUCk91fs+jUC5tNy86QNsCh17ebVvZZX
   catfacts:twilio_auth_token:
     secure: AAABADM2FGiyh4yNjcZdLiT7X/BMe1IDE7TLpwpIL/cqUjgPhN6wFqguwnkHF/i8M1WoyOdZ8Nr3uQPqHfJPSg==
+  catfacts:twilio_host:
+    secure: AAABACfy8lebPbRhp+hcuIR7o4qW2UyKO7K06M05ij03C6rp8EQPVxqu/YKKISBzLPgeMQ08JFUsT8qLmfF//Q==
   catfacts:twilio_phone_number:
     secure: AAABAKsbdM1amsG2KkUn+YyuCLXxAbR8zNy+jfIlpQetblExrc39Fpeb

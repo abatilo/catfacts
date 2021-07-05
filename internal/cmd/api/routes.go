@@ -1,6 +1,9 @@
 package api
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -44,38 +48,65 @@ func (s *Server) receive() http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		m, _ := url.ParseQuery(string(body))
-		from := m["From"][0]
-		smsBody := m["Body"][0]
+		signatureString := s.config.TwilioHost + r.URL.String()
 
-		s.logger.Info().Str("body", smsBody).Str("from", from).Msg("Received")
+		postForm, _ := url.ParseQuery(string(body))
+		keys := make([]string, 0, len(postForm))
+
+		for key := range postForm {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			signatureString += key + postForm[key][0]
+		}
+
+		mac := hmac.New(sha1.New, []byte(s.config.TwilioAuthToken))
+		mac.Write([]byte(signatureString))
+		expectedMac := mac.Sum(nil)
+		expectedTwilioSignature := base64.StdEncoding.EncodeToString(expectedMac)
+
+		if expectedTwilioSignature != r.Header.Get("X-Twilio-Signature") {
+			s.logger.Info().Msg("Received request that didn't come from Twilio")
+			http.Error(w, "Couldn't verify that the request came from Twilio", http.StatusUnauthorized)
+			return
+		}
+
+		from := postForm["From"][0]
+		smsBody := postForm["Body"][0]
+
 		// Dispatch to commands
 		switch strings.ToLower(smsBody) {
 		case "y":
 			target := model.Target{PhoneNumber: from}
-			result := s.db.Where(&target, "PhoneNumber").First(&target)
+			result := s.db.Where("phone_number = ?", from).First(&target)
 
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				s.logger.Info().Str("phoneNumber", from).Msg("Phone number wasn't found in DB, creating now")
 				s.db.Create(&target)
 			}
 
-			msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
-			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-				From: &s.config.TwilioPhoneNumber,
-				To:   &from,
-				Body: &msg,
-			})
+			if !target.Active {
+				msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
+				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					From: &s.config.TwilioPhoneNumber,
+					To:   &from,
+					Body: &msg,
+				})
 
-			randomFact := facts.RandomFact()
-			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-				From: &s.config.TwilioPhoneNumber,
-				To:   &from,
-				Body: &randomFact,
-			})
-			target.Active = true
-			target.LastSMS = time.Now().UTC()
-			s.db.Save(&target)
+				randomFact := facts.RandomFact()
+				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					From: &s.config.TwilioPhoneNumber,
+					To:   &from,
+					Body: &randomFact,
+				})
+				target.Active = true
+				target.LastSMS = time.Now().UTC()
+				s.db.Save(&target)
+			} else {
+				s.logger.Info().Str("phoneNumber", target.PhoneNumber).Msg("Phone number just tried to subscribe again")
+			}
 
 		case "now":
 			target := model.Target{PhoneNumber: from}

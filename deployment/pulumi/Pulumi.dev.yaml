@@ -3,5 +3,7 @@ config:
     secure: AAABAGo+bnkiVV127JAZ14kd2QoE/srsm9FRyg4YHorLPuFzjccVurE0+jIJUZvQdoP1K28oq6xlN4s1qpgyoewt
   twilio:auth_token:
     secure: AAABAAAYK3TpLe1qEqSrCMJ9PQdRitjwaCrc0QFD2o3SdQ39jXlVsP0B1UirjGcRslyHIDWXT2nnqZpsX7T/OA==
+  twilio:host:
+    secure: AAABAEG/PfBWPyTl8LRK2sCBwgdkEzVebGP4mMs5mOZfzhRlT9oQxWXJEeZA/kRw7BYIo9iUprA=
   twilio:phone_number:
     secure: AAABADk5LB5zNdZKSj1ixaaurb/vQ9zyZTjXblxWzDZEpFpBb/ztkS1G

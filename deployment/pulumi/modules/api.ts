@@ -60,6 +60,7 @@ class API extends pulumi.ComponentResource {
             match: "Host(`catfacts.aaronbatilo.dev`) && PathPrefix(`/api`)",
           },
           env: {
+            CF_TWILIO_HOST: config.requireSecret("twilio_host"),
             CF_TWILIO_ACCOUNT_SID: config.requireSecret("twilio_account_sid"),
             CF_TWILIO_AUTH_TOKEN: config.requireSecret("twilio_auth_token"),
             CF_TWILIO_PHONE_NUMBER: config.requireSecret("twilio_phone_number"),

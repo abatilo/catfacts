@@ -64,6 +64,7 @@ docker_build(
   entrypoint="yarn start",
 )
 
+twilio_host = str(local("pulumi -s dev --cwd ../deployment/pulumi config get twilio:host")).strip()
 twilio_account_sid = str(local("pulumi -s dev --cwd ../deployment/pulumi config get twilio:account_sid")).strip()
 twilio_auth_token = str(local("pulumi -s dev --cwd ../deployment/pulumi config get twilio:auth_token")).strip()
 twilio_phone_number = str(local("pulumi -s dev --cwd ../deployment/pulumi config get twilio:phone_number")).strip()
@@ -72,6 +73,7 @@ api_yaml = helm(
   name="api",
   values=["../deployment/helm/api/values.yaml"],
   set=[
+    "env.CF_TWILIO_HOST="+twilio_host,
     "env.CF_TWILIO_ACCOUNT_SID="+twilio_account_sid,
     "env.CF_TWILIO_AUTH_TOKEN="+twilio_auth_token,
     "env.CF_TWILIO_PHONE_NUMBER="+twilio_phone_number

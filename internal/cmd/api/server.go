@@ -30,6 +30,12 @@ const (
 	// FlagAdminPortDefault is the default value for the application web server's administrative port
 	FlagAdminPortDefault = 8081
 
+	// FlagTwilioHostName is the flag for setting the Twilio host that's used for authenticating webhooks
+	FlagTwilioHostName = "TWILIO_HOST"
+
+	// FlagTwilioHostDefault is the default value of the TWILIO_HOST flag
+	FlagTwilioHostDefault = ""
+
 	// FlagTwilioAccountSIDName is the name of the flag for the configured Twilio Account String ID
 	FlagTwilioAccountSIDName = "TWILIO_ACCOUNT_SID"
 
@@ -75,6 +81,7 @@ type Config struct {
 	AdminPort int
 
 	// Twilio values
+	TwilioHost        string
 	TwilioAccountSID  string
 	TwilioAuthToken   string
 	TwilioPhoneNumber string
