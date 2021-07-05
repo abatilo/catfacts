@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/abatilo/catfacts/internal/model"
 	"github.com/go-chi/chi"
@@ -42,7 +43,31 @@ func (s *Server) receive() http.HandlerFunc {
 		defer r.Body.Close()
 
 		m, _ := url.ParseQuery(string(body))
-		s.logger.Info().Str("body", string(body)).Str("sms_body", m["Body"][0]).Msg("Received")
+		from := m["From"][0]
+		smsBody := m["Body"][0]
+
+		s.logger.Info().Str("body", smsBody).Str("from", from).Msg("Received")
+		// Dispatch to commands
+		switch strings.ToLower(smsBody) {
+		case "y":
+			target := model.Target{PhoneNumber: from}
+			result := s.db.Where(&target, "PhoneNumber").First(&target)
+
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				s.logger.Info().Str("phoneNumber", from).Msg("Phone number wasn't found in DB, creating now")
+				s.db.Create(&target)
+			}
+
+			target.Active = true
+			s.db.Save(&target)
+
+			msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts"
+			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+				From: &s.config.TwilioPhoneNumber,
+				To:   &from,
+				Body: &msg,
+			})
+		}
 
 		fmt.Fprintf(w, "")
 	}
@@ -90,7 +115,7 @@ func (s *Server) register() http.HandlerFunc {
 		result := s.db.Where(&target, "PhoneNumber").First(&target)
 
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			s.logger.Info().Str("phoneNumber", sanitized).Msg("Phone number wasn't found in DB")
+			s.logger.Info().Str("phoneNumber", sanitized).Msg("Phone number wasn't found in DB, creating now")
 			s.db.Create(&target)
 		}
 
