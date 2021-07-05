@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
+	"time"
 
-	health "github.com/AppsFlyer/go-sundheit"
+	gosundheit "github.com/AppsFlyer/go-sundheit"
+	"github.com/AppsFlyer/go-sundheit/checks"
 	healthhttp "github.com/AppsFlyer/go-sundheit/http"
 	"github.com/go-chi/chi"
 	"github.com/twilio/twilio-go"
@@ -143,21 +145,17 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 func (s *Server) createAdminServer() *http.Server {
 	// Healthchecks
-	h := health.New()
+	h := gosundheit.New()
 
-	// err := h.RegisterCheck(&health.Config{
-	// 	Check: &checks.CustomCheck{
-	// 		CheckName: "db.ping",
-	// 		CheckFunc: func() (details interface{}, err error) {
-	// 			return s.db.Ping(context.Background())
-	// 		},
-	// 	},
-	// 	ExecutionPeriod: 15 * time.Second,
-	// })
+	err := h.RegisterCheck(
+		checks.NewHostResolveCheck("api.twilio.com", 1),
+		gosundheit.ExecutionPeriod(60*time.Second),
+		gosundheit.ExecutionTimeout(2*time.Second),
+	)
 
-	// if err != nil {
-	// 	s.logger.Panic().Err(err).Msg("couldn't register healthcheck")
-	// }
+	if err != nil {
+		s.logger.Panic().Err(err).Msg("couldn't register healthcheck")
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", healthhttp.HandleHealthJSON(h))
