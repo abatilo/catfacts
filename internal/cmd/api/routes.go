@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/abatilo/catfacts/internal/facts"
 	"github.com/abatilo/catfacts/internal/model"
@@ -59,9 +60,6 @@ func (s *Server) receive() http.HandlerFunc {
 				s.db.Create(&target)
 			}
 
-			target.Active = true
-			s.db.Save(&target)
-
 			msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
 			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 				From: &s.config.TwilioPhoneNumber,
@@ -75,6 +73,10 @@ func (s *Server) receive() http.HandlerFunc {
 				To:   &from,
 				Body: &randomFact,
 			})
+			target.Active = true
+			target.LastSMS = time.Now().UTC()
+			s.db.Save(&target)
+
 		case "now":
 			target := model.Target{PhoneNumber: from}
 			s.db.Where(&target, "PhoneNumber").First(&target)
@@ -86,6 +88,9 @@ func (s *Server) receive() http.HandlerFunc {
 					To:   &from,
 					Body: &randomFact,
 				})
+
+				target.LastSMS = time.Now().UTC()
+				s.db.Save(&target)
 			} else {
 				msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
 				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
