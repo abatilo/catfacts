@@ -83,6 +83,7 @@ class API extends pulumi.ComponentResource {
           schedule: "25 18 * * *",
           jobTemplate: {
             spec: {
+              backoffLimit: 1,
               template: {
                 spec: {
                   containers: [
