@@ -32,12 +32,12 @@ spec:
                 command: ["/bin/sleep", "10"]
           env:
           {{- range $k, $v := .Values.env }}
-          {{- if or (kindIs "string" $v) (kindIs "bool" $v) }}
-            - name: {{ $k }}
-              value: {{ $v | quote }}
-          {{- else if kindIs "slice" $v }}
+          {{- if kindIs "slice" $v }}
             - name: {{ $k }}
               value: {{ join "\n" $v | quote }}
+          {{- else }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
           {{- end }}
           {{- end }}
           ports:

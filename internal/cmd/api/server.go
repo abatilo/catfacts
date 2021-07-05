@@ -10,6 +10,7 @@ import (
 	health "github.com/AppsFlyer/go-sundheit"
 	healthhttp "github.com/AppsFlyer/go-sundheit/http"
 	"github.com/go-chi/chi"
+	"github.com/twilio/twilio-go"
 
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -27,6 +28,24 @@ const (
 
 	// FlagAdminPortDefault is the default value for the application web server's administrative port
 	FlagAdminPortDefault = 8081
+
+	// FlagTwilioAccountSIDName is the name of the flag for the configured Twilio Account String ID
+	FlagTwilioAccountSIDName = "TWILIO_ACCOUNT_SID"
+
+	// FlagTwilioAccountSIDDefault is the default value of the TWILIO_ACCOUNT_SID flag
+	FlagTwilioAccountSIDDefault = ""
+
+	// FlagTwilioAuthTokenName is the name of the flag for the configured Twilio Auth Token
+	FlagTwilioAuthTokenName = "TWILIO_AUTH_TOKEN"
+
+	// FlagTwilioAuthTokenDefault is the default for TWILIO_AUTH_TOKEN
+	FlagTwilioAuthTokenDefault = "TWILIO_AUTH_TOKEN"
+
+	// FlagTwilioPhoneNumberName is the flag for the FROM number
+	FlagTwilioPhoneNumberName = "TWILIO_PHONE_NUMBER"
+
+	// FlagTwilioPhoneNumberDefault is the default value of the TWILIO_PHONE_NUMBER flag
+	FlagTwilioPhoneNumberDefault = ""
 
 	FlagDBHost        = "DB_HOST"
 	FlagDBHostDefault = "postgresql"
@@ -54,6 +73,11 @@ type Config struct {
 	// AdminPort is the HTTP server port for internal use
 	AdminPort int
 
+	// Twilio values
+	TwilioAccountSID  string
+	TwilioAuthToken   string
+	TwilioPhoneNumber string
+
 	DBHost     string
 	DBUser     string
 	DBPassword string
@@ -66,11 +90,12 @@ type Config struct {
 // This pattern is heavily based on the following blog post:
 // https://pace.dev/blog/2018/05/09/how-I-write-http-services-after-eight-years.html
 type Server struct {
-	adminServer *http.Server
-	config      *Config
-	logger      zerolog.Logger
-	router      *chi.Mux
-	server      *http.Server
+	adminServer  *http.Server
+	config       *Config
+	logger       zerolog.Logger
+	router       *chi.Mux
+	server       *http.Server
+	twilioClient *twilio.RestClient
 }
 
 // ServerOption lets you functionally control construction of the web server
@@ -156,5 +181,12 @@ func (s *Server) createAdminServer() *http.Server {
 func WithLogger(logger zerolog.Logger) ServerOption {
 	return func(s *Server) {
 		s.logger = logger
+	}
+}
+
+// WithTwilio sets the twilio client instance
+func WithTwilio(twilioClient *twilio.RestClient) ServerOption {
+	return func(s *Server) {
+		s.twilioClient = twilioClient
 	}
 }
