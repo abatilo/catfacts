@@ -1,4 +1,4 @@
-FROM node:16.3.0-alpine as build
+FROM node:16.4.1-alpine as build
 WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --non-interactive --frozen-lockfile
