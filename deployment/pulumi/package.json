@@ -1,7 +1,7 @@
 {
     "name": "catfacts",
     "devDependencies": {
-        "@types/node": "^16.0.0"
+        "@types/node": "^16.3.0"
     },
     "dependencies": {
         "@pulumi/aws": "^4.10.0",
