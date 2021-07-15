@@ -11,5 +11,5 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/twilio/twilio-go v0.12.0
 	gorm.io/driver/postgres v1.1.0
-	gorm.io/gorm v1.21.11
+	gorm.io/gorm v1.21.12
 )
