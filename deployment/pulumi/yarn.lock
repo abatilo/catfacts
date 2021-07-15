@@ -96,10 +96,10 @@
     "@pulumi/pulumi" "^3.0.0"
     semver "^5.4.0"
 
-"@pulumi/kubernetes@^3.5.0":
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/@pulumi/kubernetes/-/kubernetes-3.5.0.tgz#62c89588f948bd85945d83636e995a6a0be44dfb"
-  integrity sha512-W1UtRPu9RH6YAOQ1ZJa4IQrugmGJjfVKr69MRSyxw6tRgSC/HR6ZeqP4KGP+qb5bkTvecPBHng2VfLAACgKGUw==
+"@pulumi/kubernetes@^3.5.1":
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/@pulumi/kubernetes/-/kubernetes-3.5.1.tgz#d5e5b75343f6825bff5287634fa4980b1d45248d"
+  integrity sha512-xmeoexeCq4L6nfysLLszFnob1rab3ricf50SdnP1QW0azYKvrhDfRGgqtg/59yP26Me6v9xp4UwRZMKDpop0nA==
   dependencies:
     "@pulumi/pulumi" "^3.0.0"
     "@types/glob" "^5.0.35"
