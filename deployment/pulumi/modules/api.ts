@@ -32,6 +32,7 @@ class API extends pulumi.ComponentResource {
           postgresqlPassword: config.requireSecret("postgresPassword"),
           postgresqlPostgresPassword: config.requireSecret("postgresPassword"),
           rbac: { create: true },
+          volumePermissions: { enabled: true },
         },
       },
       defaultOptions
