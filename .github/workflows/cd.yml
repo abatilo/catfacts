@@ -22,5 +22,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-west-2
         run: |
-          aws eks update-kubeconfig --name abatilo-cloud-tf
+          aws eks update-kubeconfig --name usw2-r
           pulumi -s prod --cwd deployment/pulumi up --yes --skip-preview --suppress-outputs --suppress-permalink

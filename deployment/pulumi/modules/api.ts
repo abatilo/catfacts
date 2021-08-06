@@ -17,6 +17,41 @@ class API extends pulumi.ComponentResource {
 
     const config = new pulumi.Config();
 
+    const catfactsPV = new k8s.core.v1.PersistentVolume("catfacts", {
+      metadata: {
+        labels: {
+          app: "catfacts",
+        },
+      },
+      spec: {
+        storageClassName: "gp2",
+        accessModes: ["ReadWriteOnce"],
+        capacity: { storage: "8Gi" },
+        persistentVolumeReclaimPolicy: "Delete",
+        awsElasticBlockStore: {
+          fsType: "ext4",
+          volumeID: "aws://us-west-2/vol-0c5e9079aec8a0b5f",
+        },
+      },
+    });
+
+    const catfactsPVC = new k8s.core.v1.PersistentVolumeClaim("catfacts", {
+      metadata: {
+        labels: {
+          app: "catfacts",
+        },
+      },
+      spec: {
+        accessModes: ["ReadWriteOnce"],
+        resources: {
+          requests: {
+            storage: "8Gi",
+          },
+        },
+        volumeName: catfactsPV.metadata.name,
+      },
+    });
+
     const postgres = new k8s.helm.v3.Chart(
       `postgres`,
       {
@@ -33,6 +68,7 @@ class API extends pulumi.ComponentResource {
           postgresqlPostgresPassword: config.requireSecret("postgresPassword"),
           rbac: { create: true },
           volumePermissions: { enabled: true },
+          existingClaim: catfactsPVC.metadata.name,
         },
       },
       defaultOptions
