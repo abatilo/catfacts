@@ -8,6 +8,10 @@ jobs:
   deploy:
     runs-on: ubuntu-20.04
     concurrency: "cd"
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
     steps:
       - uses: actions/checkout@v2
       # - uses: asdf-vm/actions/install@v1
@@ -18,9 +22,10 @@ jobs:
       - name: Run pulumi update
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ROLE_ARN: arn:aws:iam::717012417639:role/srv_ops
+          AWS_WEB_IDENTITY_TOKEN_FILE: /tmp/awscreds
           AWS_DEFAULT_REGION: us-west-2
         run: |
+          curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sigstore" | jq -r '.value' > $AWS_WEB_IDENTITY_TOKEN_FILE
           aws eks update-kubeconfig --name usw2-r
           pulumi -s prod --cwd deployment/pulumi up --yes --skip-preview --suppress-outputs --suppress-permalink
