@@ -10,3 +10,5 @@ config:
     secure: AAABAEkjD7pZcMY+I2phYa6G7AO8pPQNWpKKgksGUsTxu54KIptrSlTYI4XOI5MML6QdN6LTZE32ftevliKStA==
   catfacts:twilio_phone_number:
     secure: AAABAPztR6DR3mEpj22GcT2ilFXobEEAAZUzwHschMFbhuagK/UTMGxb
+  twilio:auth_token:
+    secure: AAABADa87+BDRewOTUzCfEH7JFEJsF2zCyuOAIupOczzdfhSnSlM5PFlGTjQaWoBihDvbY78HvtopY1jzmNcDA==
