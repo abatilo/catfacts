@@ -37,6 +37,7 @@ spec:
       backoffLimit: 1
       template:
         spec:
+          restartPolicy: Never
           containers:
             - name: catfacts-api
               image: ghcr.io/abatilo/catfacts-api:DOCKER_TAG
