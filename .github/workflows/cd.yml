@@ -4,6 +4,8 @@ on:
     branches:
       - main
 
+concurrency: catfacts
+
 jobs:
   deploy-ui:
     uses: abatilo/workflows/.github/workflows/ci.yml@main
