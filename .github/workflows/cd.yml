@@ -18,6 +18,8 @@ jobs:
       file: build/Dockerfile.frontend
       context: web/frontend/
   clean-ghcr:
+    needs:
+      - deploy-ui
     name: Delete old unused container images
     runs-on: ubuntu-latest
     steps:
