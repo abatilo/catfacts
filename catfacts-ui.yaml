@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catfacts-ui
+  labels:
+    app: catfacts-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catfacts-ui
+  template:
+    metadata:
+      labels:
+        app: catfacts-ui
+    spec:
+      containers:
+        - name: catfacts-ui
+          image: ghcr.io/abatilo/catfacts-ui:DOCKER_TAG
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catfacts-ui
+spec:
+  selector:
+    app: catfacts-ui
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: catfacts-ui
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: catfacts-ui
+---
+apiVersion: "traefik.containo.us/v1alpha1"
+kind: "Middleware"
+metadata:
+  name: catfacts-ui
+spec:
+  headers:
+    forceSTSHeader: true
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    stsPreload: true
+    referrerPolicy: "no-referrer-when-downgrade"
+    contentTypeNosniff: true
+    contentSecurityPolicy: "upgrade-insecure-requests"
+    browserXssFilter: true
+    customFrameOptionsValue: "SAMEORIGIN"
+    customResponseHeaders:
+      "Permissions-Policy": "geolocation=(); midi=(); notifications=(); push=(); sync-xhr=(); microphone=(); camera=(); magnetometer=(); gyroscope=(); speaker=(self); vibrate=(); fullscreen=(self); payment=();"
+      "Server": ""
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: catfacts-ui-http-to-https
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: "traefik.containo.us/v1alpha1"
+kind: "IngressRoute"
+metadata:
+  name: catfacts-ui
+spec:
+  entryPoints: ["web"]
+  routes:
+    - match: "Host(`catfacts.aaronbatilo.dev`)"
+      kind: "Rule"
+      middlewares:
+        - name: catfacts-ui-http-to-https
+        - name: catfacts-ui
+      services:
+        - name: catfacts-ui
+          port: 80
+---
+apiVersion: "traefik.containo.us/v1alpha1"
+kind: "IngressRoute"
+metadata:
+  name: catfacts-ui-secure
+spec:
+  entryPoints: ["websecure"]
+  routes:
+    - match: "Host(`catfacts.aaronbatilo.dev`) && PathPrefix(`/`)"
+      kind: "Rule"
+      middlewares:
+        - name: catfacts-ui
+      services:
+        - name: catfacts-ui
+          port: 80
