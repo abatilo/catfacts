@@ -24,6 +24,30 @@ spec:
             - secretRef:
                 name: catfacts
 ---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: catfacts-api
+  labels:
+    app: catfacts-api
+spec:
+  schedule: "25 18 * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          containers:
+            - name: catfacts-api
+              image: ghcr.io/abatilo/catfacts-api:DOCKER_TAG
+              envFrom:
+                - secretRef:
+                    name: catfacts
+              command:
+                - "/go/bin/cf"
+              args:
+                - "/go/bin/cf"
+---
 apiVersion: v1
 kind: Service
 metadata:
