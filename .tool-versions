@@ -6,3 +6,4 @@ pulumi 3.6.0
 tilt 0.21.1
 yarn 1.22.10
 k3d 5.0.1
+chamber 2.10.7

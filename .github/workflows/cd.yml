@@ -7,6 +7,16 @@ on:
 concurrency: catfacts
 
 jobs:
+  deploy-api:
+    uses: abatilo/workflows/.github/workflows/ci.yml@main
+    permissions:
+      id-token: write
+      packages: write
+      contents: read
+    with:
+      name: catfacts-api
+      file: build/Dockerfile.api
+      context: .
   deploy-ui:
     uses: abatilo/workflows/.github/workflows/ci.yml@main
     permissions:
@@ -19,6 +29,7 @@ jobs:
       context: web/frontend/
   clean-ghcr:
     needs:
+      - deploy-api
       - deploy-ui
     name: Delete old unused container images
     runs-on: ubuntu-latest
@@ -26,7 +37,7 @@ jobs:
       - name: Delete old containers
         uses: snok/container-retention-policy@v1
         with:
-          image-names: deploy-ui
+          image-names: deploy-api, deploy-ui
           cut-off: A week ago UTC
           account-type: personal
           token: ${{ secrets.GH_PAT }}

@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catfacts-api
+  labels:
+    app: catfacts-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catfacts-api
+  template:
+    metadata:
+      labels:
+        app: catfacts-api
+    spec:
+      containers:
+        - name: catfacts-api
+          image: ghcr.io/abatilo/catfacts-api:DOCKER_TAG
+          ports:
+            - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: catfacts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catfacts-api
+spec:
+  selector:
+    app: catfacts-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: catfacts-api
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: catfacts-api
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: catfacts-api-http-to-https
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: "traefik.containo.us/v1alpha1"
+kind: "IngressRoute"
+metadata:
+  name: catfacts-api
+spec:
+  entryPoints: ["web"]
+  routes:
+    - match: "Host(`catfacts.aaronbatilo.dev`) && PathPrefix(`/api`)"
+      kind: "Rule"
+      middlewares:
+        - name: catfacts-api-http-to-https
+      services:
+        - name: catfacts-api
+          port: 80
+---
+apiVersion: "traefik.containo.us/v1alpha1"
+kind: "IngressRoute"
+metadata:
+  name: catfacts-api-secure
+spec:
+  entryPoints: ["websecure"]
+  routes:
+    - match: "Host(`catfacts.aaronbatilo.dev`) && PathPrefix(`/api`)"
+      kind: "Rule"
+      services:
+        - name: catfacts-api
+          port: 80

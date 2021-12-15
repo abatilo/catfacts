@@ -68,6 +68,9 @@ const (
 
 	FlagDBSSLMode        = "DB_SSL_MODE"
 	FlagDBSSLModeDefault = "disable"
+
+	FlagDBSearchPath        = "DB_SEARCH_PATH"
+	FlagDBSearchPathDefault = "public"
 )
 
 // Config is all configuration for running the application.
@@ -86,11 +89,12 @@ type Config struct {
 	TwilioAuthToken   string
 	TwilioPhoneNumber string
 
-	DBHost     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBSSLMode  string
+	DBHost       string
+	DBUser       string
+	DBPassword   string
+	DBName       string
+	DBSSLMode    string
+	DBSearchPath string
 }
 
 // Server represents the service itself and all of its dependencies.
