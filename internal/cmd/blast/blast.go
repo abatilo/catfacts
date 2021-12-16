@@ -48,6 +48,9 @@ const (
 
 	FlagDBSSLMode        = "DB_SSL_MODE"
 	FlagDBSSLModeDefault = "disable"
+
+	FlagDBSearchPath        = "DB_SEARCH_PATH"
+	FlagDBSearchPathDefault = "public"
 )
 
 // Config is all configuration for running the application.
@@ -59,11 +62,12 @@ type Config struct {
 	TwilioAuthToken   string
 	TwilioPhoneNumber string
 
-	DBHost     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBSSLMode  string
+	DBHost       string
+	DBUser       string
+	DBPassword   string
+	DBName       string
+	DBSSLMode    string
+	DBSearchPath string
 }
 
 // Cmd parses config and starts the application
@@ -81,6 +85,7 @@ func Cmd(logger zerolog.Logger) *cobra.Command {
 				DBPassword:        viper.GetString(FlagDBPassword),
 				DBName:            viper.GetString(FlagDBName),
 				DBSSLMode:         viper.GetString(FlagDBSSLMode),
+				DBSearchPath:      viper.GetString(FlagDBSearchPath),
 			}
 			run(logger, cfg)
 		}}
@@ -109,6 +114,9 @@ func Cmd(logger zerolog.Logger) *cobra.Command {
 	cmd.PersistentFlags().String(FlagDBSSLMode, FlagDBSSLModeDefault, "DB SSLMode")
 	viper.BindPFlag(FlagDBSSLMode, cmd.PersistentFlags().Lookup(FlagDBSSLMode))
 
+	cmd.PersistentFlags().String(FlagDBSearchPath, FlagDBSearchPathDefault, "DB Search Path")
+	viper.BindPFlag(FlagDBSearchPath, cmd.PersistentFlags().Lookup(FlagDBSearchPath))
+
 	return cmd
 }
 
@@ -118,7 +126,7 @@ func run(logger zerolog.Logger, cfg *Config) {
 	// Build dependendies
 	twilioClient := twilio.NewRestClient(cfg.TwilioAccountSID, cfg.TwilioAuthToken)
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s TimeZone=UTC", cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s search_path=%s TimeZone=UTC", cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode, cfg.DBSearchPath)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		logger.Panic().Err(err).Msg("Unable to connect to database")
