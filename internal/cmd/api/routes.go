@@ -34,6 +34,7 @@ func (s *Server) registerRoutes() {
 }
 
 func (s *Server) connectToDB() *gorm.DB {
+	s.logger.Info().Msg("Lazily instantiating a database connection")
 	db, err := gorm.Open(postgres.Open(s.dbConnString), &gorm.Config{})
 	if err != nil {
 		s.logger.Panic().Err(err).Msg("Unable to connect to database")
