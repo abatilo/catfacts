@@ -20,6 +20,7 @@ import (
 	"github.com/go-chi/chi"
 	tw_api "github.com/twilio/twilio-go/rest/api/v2010"
 	tw_lookups "github.com/twilio/twilio-go/rest/lookups/v1"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -30,6 +31,20 @@ func (s *Server) registerRoutes() {
 
 		r.Post("/register", s.register())
 	})
+}
+
+func (s *Server) connectToDB() *gorm.DB {
+	db, err := gorm.Open(postgres.Open(s.dbConnString), &gorm.Config{})
+	if err != nil {
+		s.logger.Panic().Err(err).Msg("Unable to connect to database")
+	}
+
+	s.logger.Info().Msg("Starting migrations")
+	db.AutoMigrate(
+		&model.Target{},
+	)
+	s.logger.Info().Msg("Finished migrations")
+	return db
 }
 
 func (s *Server) ping() http.HandlerFunc {
@@ -73,6 +88,8 @@ func (s *Server) receive() http.HandlerFunc {
 			return
 		}
 
+		db := s.connectToDB()
+
 		from := postForm["From"][0]
 		smsBody := postForm["Body"][0]
 
@@ -80,11 +97,11 @@ func (s *Server) receive() http.HandlerFunc {
 		switch strings.ToLower(smsBody) {
 		case "y":
 			target := model.Target{PhoneNumber: from}
-			result := s.db.Where("phone_number = ?", from).First(&target)
+			result := db.Where("phone_number = ?", from).First(&target)
 
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				s.logger.Info().Str("phoneNumber", from).Msg("Phone number wasn't found in DB, creating now")
-				s.db.Create(&target)
+				db.Create(&target)
 			}
 
 			if !target.Active {
@@ -103,14 +120,14 @@ func (s *Server) receive() http.HandlerFunc {
 				})
 				target.Active = true
 				target.LastSMS = time.Now().UTC()
-				s.db.Save(&target)
+				db.Save(&target)
 			} else {
 				s.logger.Info().Str("phoneNumber", target.PhoneNumber).Msg("Phone number just tried to subscribe again")
 			}
 
 		case "now":
 			target := model.Target{PhoneNumber: from}
-			s.db.Where(&target, "PhoneNumber").First(&target)
+			db.Where(&target, "PhoneNumber").First(&target)
 
 			if target.Active {
 				randomFact := facts.RandomFact()
@@ -121,7 +138,7 @@ func (s *Server) receive() http.HandlerFunc {
 				})
 
 				target.LastSMS = time.Now().UTC()
-				s.db.Save(&target)
+				db.Save(&target)
 			} else {
 				msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
 				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
@@ -173,13 +190,15 @@ func (s *Server) register() http.HandlerFunc {
 
 		sanitized := *fetchPhoneNumberResponse.PhoneNumber
 
+		db := s.connectToDB()
+
 		// Place into database if it doesn't already exist
 		target := model.Target{PhoneNumber: sanitized}
-		result := s.db.Where(&target, "PhoneNumber").First(&target)
+		result := db.Where(&target, "PhoneNumber").First(&target)
 
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			s.logger.Info().Str("phoneNumber", sanitized).Msg("Phone number wasn't found in DB, creating now")
-			s.db.Create(&target)
+			db.Create(&target)
 		}
 
 		// Send confirmation text

@@ -102,7 +102,7 @@ func run(logger zerolog.Logger, cfg *Config) {
 	s := NewServer(cfg,
 		WithLogger(logger),
 		WithTwilio(twilioClient),
-		WithDB(db),
+		WithDBConnString(dsn),
 	)
 
 	// Register signal handlers for graceful shutdown
