@@ -142,7 +142,7 @@ func run(logger zerolog.Logger, cfg *Config) {
 		timeSinceLastSMS := time.Since(target.LastSMS)
 
 		if target.Active && 1.0 < timeSinceLastSMS.Hours() {
-			randomFact := facts.RandomFact()
+			randomFact := facts.GenerateFact()
 			twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 				From: &cfg.TwilioPhoneNumber,
 				To:   &target.PhoneNumber,

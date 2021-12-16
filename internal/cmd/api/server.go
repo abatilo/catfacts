@@ -70,6 +70,9 @@ const (
 
 	FlagDBSearchPath        = "DB_SEARCH_PATH"
 	FlagDBSearchPathDefault = "public"
+
+	FlagOpenAISecretKey        = "OPENAI_SECRET_KEY"
+	FlagOpenAISecretKeyDefault = ""
 )
 
 // Config is all configuration for running the application.
@@ -94,6 +97,8 @@ type Config struct {
 	DBName       string
 	DBSSLMode    string
 	DBSearchPath string
+
+	OpenAISecretKey string
 }
 
 // Server represents the service itself and all of its dependencies.

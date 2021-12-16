@@ -113,7 +113,7 @@ func (s *Server) receive() http.HandlerFunc {
 					Body: &msg,
 				})
 
-				randomFact := facts.RandomFact()
+				randomFact := facts.GenerateFact()
 				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 					From: &s.config.TwilioPhoneNumber,
 					To:   &from,
@@ -131,7 +131,7 @@ func (s *Server) receive() http.HandlerFunc {
 			db.Where(&target, "PhoneNumber").First(&target)
 
 			if target.Active {
-				randomFact := facts.RandomFact()
+				randomFact := facts.GenerateFact()
 				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 					From: &s.config.TwilioPhoneNumber,
 					To:   &from,

@@ -33,6 +33,7 @@ func Cmd(logger zerolog.Logger) *cobra.Command {
 				DBName:            viper.GetString(FlagDBName),
 				DBSSLMode:         viper.GetString(FlagDBSSLMode),
 				DBSearchPath:      viper.GetString(FlagDBSearchPath),
+				OpenAISecretKey:   viper.GetString(FlagOpenAISecretKey),
 			}
 			run(logger, cfg)
 		}}
@@ -73,12 +74,13 @@ func Cmd(logger zerolog.Logger) *cobra.Command {
 	cmd.PersistentFlags().String(FlagDBSearchPath, FlagDBSearchPathDefault, "DB Search Path")
 	viper.BindPFlag(FlagDBSearchPath, cmd.PersistentFlags().Lookup(FlagDBSearchPath))
 
+	cmd.PersistentFlags().String(FlagOpenAISecretKey, FlagOpenAISecretKeyDefault, "OpenAI Secret Key")
+	viper.BindPFlag(FlagOpenAISecretKey, cmd.PersistentFlags().Lookup(FlagOpenAISecretKey))
+
 	return cmd
 }
 
 func run(logger zerolog.Logger, cfg *Config) {
-	logger.Info().Msgf("%#v", cfg)
-
 	// Build dependendies
 	twilioClient := twilio.NewRestClient(cfg.TwilioAccountSID, cfg.TwilioAuthToken)
 
