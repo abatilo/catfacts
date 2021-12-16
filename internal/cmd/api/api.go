@@ -8,13 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/abatilo/catfacts/internal/model"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/twilio/twilio-go"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 // Cmd parses config and starts the application
@@ -86,17 +83,6 @@ func run(logger zerolog.Logger, cfg *Config) {
 	twilioClient := twilio.NewRestClient(cfg.TwilioAccountSID, cfg.TwilioAuthToken)
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s search_path=%s TimeZone=UTC", cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode, cfg.DBSearchPath)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		logger.Panic().Err(err).Msg("Unable to connect to database")
-	}
-
-	logger.Info().Msg("Starting migrations")
-	db.AutoMigrate(
-		&model.Target{},
-	)
-	logger.Info().Msg("Finished migrations")
-
 	// End build dependendies
 
 	s := NewServer(cfg,
