@@ -33,19 +33,21 @@ func (s *Server) registerRoutes() {
 	})
 }
 
-func (s *Server) connectToDB() *gorm.DB {
+func (s *Server) connectToDB() (*gorm.DB, func() error) {
 	s.logger.Info().Msg("Lazily instantiating a database connection")
 	db, err := gorm.Open(postgres.Open(s.dbConnString), &gorm.Config{})
 	if err != nil {
 		s.logger.Panic().Err(err).Msg("Unable to connect to database")
 	}
 
+	raw, _ := db.DB()
+
 	s.logger.Info().Msg("Starting migrations")
 	db.AutoMigrate(
 		&model.Target{},
 	)
 	s.logger.Info().Msg("Finished migrations")
-	return db
+	return db, raw.Close
 }
 
 func (s *Server) ping() http.HandlerFunc {
@@ -89,7 +91,8 @@ func (s *Server) receive() http.HandlerFunc {
 			return
 		}
 
-		db := s.connectToDB()
+		db, disconnect := s.connectToDB()
+		defer disconnect()
 
 		from := postForm["From"][0]
 		smsBody := postForm["Body"][0]
@@ -106,22 +109,24 @@ func (s *Server) receive() http.HandlerFunc {
 			}
 
 			if !target.Active {
-				msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
-				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-					From: &s.config.TwilioPhoneNumber,
-					To:   &from,
-					Body: &msg,
-				})
+				go func() {
+					msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
+					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+						From: &s.config.TwilioPhoneNumber,
+						To:   &from,
+						Body: &msg,
+					})
 
-				randomFact := facts.GenerateFact()
-				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-					From: &s.config.TwilioPhoneNumber,
-					To:   &from,
-					Body: &randomFact,
-				})
-				target.Active = true
-				target.LastSMS = time.Now().UTC()
-				db.Save(&target)
+					randomFact := facts.GenerateFact()
+					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+						From: &s.config.TwilioPhoneNumber,
+						To:   &from,
+						Body: &randomFact,
+					})
+					target.Active = true
+					target.LastSMS = time.Now().UTC()
+					db.Save(&target)
+				}()
 			} else {
 				s.logger.Info().Str("phoneNumber", target.PhoneNumber).Msg("Phone number just tried to subscribe again")
 			}
@@ -131,15 +136,17 @@ func (s *Server) receive() http.HandlerFunc {
 			db.Where(&target, "PhoneNumber").First(&target)
 
 			if target.Active {
-				randomFact := facts.GenerateFact()
-				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-					From: &s.config.TwilioPhoneNumber,
-					To:   &from,
-					Body: &randomFact,
-				})
+				go func() {
+					randomFact := facts.GenerateFact()
+					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+						From: &s.config.TwilioPhoneNumber,
+						To:   &from,
+						Body: &randomFact,
+					})
 
-				target.LastSMS = time.Now().UTC()
-				db.Save(&target)
+					target.LastSMS = time.Now().UTC()
+					db.Save(&target)
+				}()
 			} else {
 				msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
 				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
@@ -191,7 +198,8 @@ func (s *Server) register() http.HandlerFunc {
 
 		sanitized := *fetchPhoneNumberResponse.PhoneNumber
 
-		db := s.connectToDB()
+		db, disconnect := s.connectToDB()
+		defer disconnect()
 
 		// Place into database if it doesn't already exist
 		target := model.Target{PhoneNumber: sanitized}
