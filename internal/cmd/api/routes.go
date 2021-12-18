@@ -111,26 +111,22 @@ func (s *Server) receive() http.HandlerFunc {
 				}
 
 				if !target.Active {
-					go func() {
-						db, disconnect := s.connectToDB()
-						defer disconnect()
-						msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
-						s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-							From: &s.config.TwilioPhoneNumber,
-							To:   &from,
-							Body: &msg,
-						})
+					msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
+					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+						From: &s.config.TwilioPhoneNumber,
+						To:   &from,
+						Body: &msg,
+					})
 
-						randomFact, _ := facts.GenerateFact(target.ID)
-						s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-							From: &s.config.TwilioPhoneNumber,
-							To:   &from,
-							Body: &randomFact,
-						})
-						target.Active = true
-						target.LastSMS = time.Now().UTC()
-						db.Save(&target)
-					}()
+					randomFact, _ := facts.GenerateFact(target.ID)
+					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+						From: &s.config.TwilioPhoneNumber,
+						To:   &from,
+						Body: &randomFact,
+					})
+					target.Active = true
+					target.LastSMS = time.Now().UTC()
+					db.Save(&target)
 				} else {
 					s.logger.Info().Str("phoneNumber", target.PhoneNumber).Msg("Phone number just tried to subscribe again")
 				}
@@ -141,22 +137,18 @@ func (s *Server) receive() http.HandlerFunc {
 
 				if target.Active {
 					s.logger.Info().Msg("Calling goroutine")
-					go func() {
-						db, disconnect := s.connectToDB()
-						defer disconnect()
-						s.logger.Info().Msg("Starting goroutine")
-						defer s.logger.Info().Msg("Completed goroutine")
+					s.logger.Info().Msg("Starting goroutine")
+					defer s.logger.Info().Msg("Completed goroutine")
 
-						randomFact, _ := facts.GenerateFact(target.ID)
-						s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-							From: &s.config.TwilioPhoneNumber,
-							To:   &from,
-							Body: &randomFact,
-						})
+					randomFact, _ := facts.GenerateFact(target.ID)
+					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+						From: &s.config.TwilioPhoneNumber,
+						To:   &from,
+						Body: &randomFact,
+					})
 
-						target.LastSMS = time.Now().UTC()
-						db.Save(&target)
-					}()
+					target.LastSMS = time.Now().UTC()
+					db.Save(&target)
 				} else {
 					msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
 					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
