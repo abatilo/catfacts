@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/AppsFlyer/go-sundheit v0.4.0
-	github.com/PullRequestInc/go-gpt3 v1.1.4
 	github.com/go-chi/chi v1.5.4
 	github.com/rs/cors v1.8.0
 	github.com/rs/zerolog v1.23.0

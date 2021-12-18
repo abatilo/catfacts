@@ -1,14 +1,17 @@
 package facts
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
+	"net/http"
 	"os"
-	"strings"
+	"strconv"
 	"time"
-
-	"github.com/PullRequestInc/go-gpt3"
 )
 
 func init() {
@@ -162,27 +165,42 @@ func randomFact() string {
 	return facts[n]
 }
 
+type completionRequest struct {
+	User             string   `json:"user"`
+	N                int      `json:"n"`
+	MaxTokens        int      `json:"max_tokens"`
+	Stop             []string `json:"stop"`
+	Temperature      float32  `json:"temperature"`
+	TopP             float32  `json:"top_p"`
+	PresencePenalty  float32  `json:"presence_penalty"`
+	FrequencyPenalty float32  `json:"frequency_penalty"`
+	Echo             bool     `json:"echo"`
+	Prompt           []string `json:"prompt"`
+}
+
 // GenerateFact generates a random fact using go-gpt3
-func GenerateFact() string {
+func GenerateFact(id uint) (string, bool) {
 	// Cheating with this instead of loading from static config
 	secretKey := os.Getenv("CF_OPENAI_SECRET_KEY")
 	if secretKey == "" {
-		return randomFact()
+		log.Println("CF_OPENAI_SECRET_KEY not set")
+		return randomFact(), false
 	}
 
-	client := gpt3.NewClient(secretKey)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	n := float32(1)
-	temperature := float32(0.5)
-	topP := float32(1)
-	resp, err := client.Completion(ctx, gpt3.CompletionRequest{
-		N:                &n,
-		MaxTokens:        gpt3.IntPtr(30),
+	// convert id to string
+	user := strconv.Itoa(int(id))
+
+	completionURL := "https://api.openai.com/v1/engines/davinci/completions"
+	completionRequest := completionRequest{
+		User:             user,
+		N:                1,
+		MaxTokens:        60,
 		Stop:             []string{"\n"},
-		Temperature:      &temperature,
-		TopP:             &topP,
+		Temperature:      0.5,
+		TopP:             1,
 		PresencePenalty:  0,
 		FrequencyPenalty: 0,
 		Echo:             false,
@@ -205,15 +223,57 @@ func GenerateFact() string {
 %s
 ------
 `, randomFact(), randomFact(), randomFact(), randomFact(), randomFact(), randomFact(), randomFact(), randomFact())},
-	})
+	}
 
+	jsonBody, err := json.Marshal(completionRequest)
 	if err != nil {
-		randomFact()
+		log.Println("Error marshalling completion request:", err)
+		return randomFact(), false
 	}
 
-	output := strings.TrimSpace(resp.Choices[0].Text)
-	if output == "" {
-		return randomFact()
+	// Create http req with context
+	req, err := http.NewRequestWithContext(ctx, "POST", completionURL, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		log.Println("Error creating completion request:", err)
+		return randomFact(), false
 	}
-	return output
+
+	req.Header.Set("Authorization", "Bearer "+secretKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error completing request:", err)
+		return randomFact(), false
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error reading completion response:", err)
+		return randomFact(), false
+	}
+
+	type completionChoices struct {
+		Text string `json:"text"`
+	}
+
+	type completionResponse struct {
+		Choices []completionChoices `json:"choices"`
+	}
+
+	var response completionResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		log.Println("Error unmarshalling completion response:", err)
+		return randomFact(), false
+	}
+
+	if len(response.Choices) == 0 {
+		log.Println("No completion choices found")
+		return randomFact(), false
+	}
+
+	return response.Choices[0].Text, true
 }
