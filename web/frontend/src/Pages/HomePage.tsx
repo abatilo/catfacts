@@ -184,6 +184,16 @@ export default function HomePage() {
                 </a>
                 .
               </p>
+              <p className="mt-3 text-sm text-gray-500">
+                If I made you giggle, consider{" "}
+                <a
+                  href="https://www.buymeacoffee.com/abatilo"
+                  className="font-medium text-gray-900 underline"
+                >
+                buying me a coffee
+                </a>
+                .
+              </p>
             </div>
           </div>
         </main>
