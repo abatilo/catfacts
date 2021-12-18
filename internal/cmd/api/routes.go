@@ -188,41 +188,43 @@ func (s *Server) register() http.HandlerFunc {
 		io.CopyN(ioutil.Discard, r.Body, 512)
 		r.Body.Close()
 
-		// Sanitize phone number
-		countryCode := "US"
-		fetchPhoneNumberResponse, err := s.twilioClient.LookupsV1.FetchPhoneNumber(req.PhoneNumber, &tw_lookups.FetchPhoneNumberParams{
-			CountryCode: &countryCode,
-		})
-
-		if err != nil {
-			s.logger.Err(err).Msg("Couldn't look up this phone number")
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		sanitized := *fetchPhoneNumberResponse.PhoneNumber
-
-		db, disconnect := s.connectToDB()
-		defer disconnect()
-
-		// Place into database if it doesn't already exist
-		target := model.Target{PhoneNumber: sanitized}
-		result := db.Where(&target, "PhoneNumber").First(&target)
-
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			s.logger.Info().Str("phoneNumber", sanitized).Msg("Phone number wasn't found in DB, creating now")
-			db.Create(&target)
-		}
-
-		// Send confirmation text
-		if !target.Active {
-			msg := "You've just been registered for Aaron Batilo's CatFacts! Reply with \"Y\" if you'd like to confirm that you want to receive CatFacts!"
-			s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-				From: &s.config.TwilioPhoneNumber,
-				To:   &sanitized,
-				Body: &msg,
+		go func() {
+			// Sanitize phone number
+			countryCode := "US"
+			fetchPhoneNumberResponse, err := s.twilioClient.LookupsV1.FetchPhoneNumber(req.PhoneNumber, &tw_lookups.FetchPhoneNumberParams{
+				CountryCode: &countryCode,
 			})
-		}
+
+			if err != nil {
+				s.logger.Err(err).Msg("Couldn't look up this phone number")
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			sanitized := *fetchPhoneNumberResponse.PhoneNumber
+
+			db, disconnect := s.connectToDB()
+			defer disconnect()
+
+			// Place into database if it doesn't already exist
+			target := model.Target{PhoneNumber: sanitized}
+			result := db.Where(&target, "PhoneNumber").First(&target)
+
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				s.logger.Info().Str("phoneNumber", sanitized).Msg("Phone number wasn't found in DB, creating now")
+				db.Create(&target)
+			}
+
+			// Send confirmation text
+			if !target.Active {
+				msg := "You've just been registered for Aaron Batilo's CatFacts! Reply with \"Y\" if you'd like to confirm that you want to receive CatFacts!"
+				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					From: &s.config.TwilioPhoneNumber,
+					To:   &sanitized,
+					Body: &msg,
+				})
+			}
+		}()
 
 		fmt.Fprintf(w, "")
 	}
