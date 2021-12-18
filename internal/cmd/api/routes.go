@@ -58,6 +58,7 @@ func (s *Server) ping() http.HandlerFunc {
 
 func (s *Server) receive() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		s.logger.Info().Msg("Received SMS")
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			s.logger.Err(err).Msg("Couldn't read body")
@@ -139,7 +140,10 @@ func (s *Server) receive() http.HandlerFunc {
 			db.Where(&target, "PhoneNumber").First(&target)
 
 			if target.Active {
+				s.logger.Info().Msg("Calling goroutine")
 				go func() {
+					s.logger.Info().Msg("Starting goroutine")
+					defer s.logger.Info().Msg("Completed goroutine")
 					db, disconnect := s.connectToDB()
 					defer disconnect()
 
@@ -163,6 +167,7 @@ func (s *Server) receive() http.HandlerFunc {
 			}
 		}
 
+		s.logger.Info().Msg("Writing to response")
 		fmt.Fprintf(w, "")
 	}
 }
