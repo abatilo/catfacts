@@ -110,6 +110,9 @@ func (s *Server) receive() http.HandlerFunc {
 
 			if !target.Active {
 				go func() {
+					db, disconnect := s.connectToDB()
+					defer disconnect()
+
 					msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
 					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 						From: &s.config.TwilioPhoneNumber,
@@ -137,6 +140,9 @@ func (s *Server) receive() http.HandlerFunc {
 
 			if target.Active {
 				go func() {
+					db, disconnect := s.connectToDB()
+					defer disconnect()
+
 					randomFact, _ := facts.GenerateFact(target.ID)
 					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 						From: &s.config.TwilioPhoneNumber,
