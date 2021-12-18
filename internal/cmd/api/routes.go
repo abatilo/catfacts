@@ -92,80 +92,77 @@ func (s *Server) receive() http.HandlerFunc {
 			return
 		}
 
-		db, disconnect := s.connectToDB()
-		defer disconnect()
+		go func() {
+			db, disconnect := s.connectToDB()
+			defer disconnect()
 
-		from := postForm["From"][0]
-		smsBody := postForm["Body"][0]
+			from := postForm["From"][0]
+			smsBody := postForm["Body"][0]
 
-		// Dispatch to commands
-		switch strings.ToLower(smsBody) {
-		case "y":
-			target := model.Target{PhoneNumber: from}
-			result := db.Where("phone_number = ?", from).First(&target)
+			// Dispatch to commands
+			switch strings.ToLower(smsBody) {
+			case "y":
+				target := model.Target{PhoneNumber: from}
+				result := db.Where("phone_number = ?", from).First(&target)
 
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				s.logger.Info().Str("phoneNumber", from).Msg("Phone number wasn't found in DB, creating now")
-				db.Create(&target)
-			}
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					s.logger.Info().Str("phoneNumber", from).Msg("Phone number wasn't found in DB, creating now")
+					db.Create(&target)
+				}
 
-			if !target.Active {
-				go func() {
-					db, disconnect := s.connectToDB()
-					defer disconnect()
+				if !target.Active {
+					go func() {
+						msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
+						s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+							From: &s.config.TwilioPhoneNumber,
+							To:   &from,
+							Body: &msg,
+						})
 
-					msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
+						randomFact, _ := facts.GenerateFact(target.ID)
+						s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+							From: &s.config.TwilioPhoneNumber,
+							To:   &from,
+							Body: &randomFact,
+						})
+						target.Active = true
+						target.LastSMS = time.Now().UTC()
+						db.Save(&target)
+					}()
+				} else {
+					s.logger.Info().Str("phoneNumber", target.PhoneNumber).Msg("Phone number just tried to subscribe again")
+				}
+
+			case "now":
+				target := model.Target{PhoneNumber: from}
+				db.Where(&target, "PhoneNumber").First(&target)
+
+				if target.Active {
+					s.logger.Info().Msg("Calling goroutine")
+					go func() {
+						s.logger.Info().Msg("Starting goroutine")
+						defer s.logger.Info().Msg("Completed goroutine")
+
+						randomFact, _ := facts.GenerateFact(target.ID)
+						s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+							From: &s.config.TwilioPhoneNumber,
+							To:   &from,
+							Body: &randomFact,
+						})
+
+						target.LastSMS = time.Now().UTC()
+						db.Save(&target)
+					}()
+				} else {
+					msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
 					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 						From: &s.config.TwilioPhoneNumber,
 						To:   &from,
 						Body: &msg,
 					})
-
-					randomFact, _ := facts.GenerateFact(target.ID)
-					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-						From: &s.config.TwilioPhoneNumber,
-						To:   &from,
-						Body: &randomFact,
-					})
-					target.Active = true
-					target.LastSMS = time.Now().UTC()
-					db.Save(&target)
-				}()
-			} else {
-				s.logger.Info().Str("phoneNumber", target.PhoneNumber).Msg("Phone number just tried to subscribe again")
+				}
 			}
-
-		case "now":
-			target := model.Target{PhoneNumber: from}
-			db.Where(&target, "PhoneNumber").First(&target)
-
-			if target.Active {
-				s.logger.Info().Msg("Calling goroutine")
-				go func() {
-					s.logger.Info().Msg("Starting goroutine")
-					defer s.logger.Info().Msg("Completed goroutine")
-					db, disconnect := s.connectToDB()
-					defer disconnect()
-
-					randomFact, _ := facts.GenerateFact(target.ID)
-					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-						From: &s.config.TwilioPhoneNumber,
-						To:   &from,
-						Body: &randomFact,
-					})
-
-					target.LastSMS = time.Now().UTC()
-					db.Save(&target)
-				}()
-			} else {
-				msg := "It doesn't look like this number has subscribed to CatFacts. Visit https://catfacts.aaronbatilo.dev if you'd like to change that!"
-				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
-					From: &s.config.TwilioPhoneNumber,
-					To:   &from,
-					Body: &msg,
-				})
-			}
-		}
+		}()
 
 		s.logger.Info().Msg("Writing to response")
 		fmt.Fprintf(w, "")
