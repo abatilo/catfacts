@@ -112,18 +112,27 @@ func (s *Server) receive() http.HandlerFunc {
 
 				if !target.Active {
 					msg := "You've just been confirmed for Aaron Batilo's CatFacts! You will start receiving random CatFacts. You can text \"now\" if you'd like to immediately receive a CatFact"
-					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					_, err := s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 						From: &s.config.TwilioPhoneNumber,
 						To:   &from,
 						Body: &msg,
 					})
 
+					if err != nil {
+						s.logger.Err(err).Msg("Couldn't send confirmation message")
+					}
+
 					randomFact, _ := facts.GenerateFact(target.ID)
-					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+					_, err = s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 						From: &s.config.TwilioPhoneNumber,
 						To:   &from,
 						Body: &randomFact,
 					})
+
+					if err != nil {
+						s.logger.Err(err).Msg("Couldn't send fact message")
+					}
+
 					target.Active = true
 					target.LastSMS = time.Now().UTC()
 					db.Save(&target)
@@ -218,11 +227,17 @@ func (s *Server) register() http.HandlerFunc {
 			// Send confirmation text
 			if !target.Active {
 				msg := "You've just been registered for Aaron Batilo's CatFacts! Reply with \"Y\" if you'd like to confirm that you want to receive CatFacts!"
-				s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+				_, err := s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 					From: &s.config.TwilioPhoneNumber,
 					To:   &sanitized,
 					Body: &msg,
 				})
+
+				if err != nil {
+					s.logger.Err(err).Msg("Couldn't send confirmation text")
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 		}()
 
