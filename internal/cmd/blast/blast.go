@@ -138,16 +138,22 @@ func run(logger zerolog.Logger, cfg *Config) {
 
 	logger.Info().Int("usersCount", len(targets)).Msg("Sending an SMS to all registered users")
 
-	for _, target := range targets {
+	for i, target := range targets {
 		timeSinceLastSMS := time.Since(target.LastSMS)
 
 		if target.Active && 1.0 < timeSinceLastSMS.Hours() {
 			randomFact, _ := facts.GenerateFact(target.ID)
-			twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+			_, err := twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 				From: &cfg.TwilioPhoneNumber,
 				To:   &target.PhoneNumber,
 				Body: &randomFact,
 			})
+
+			if err != nil {
+				logger.Error().Err(err).Int("user", i+1).Msg("Unable to send SMS")
+			} else {
+				logger.Info().Int("user", i+1).Msg("SMS sent successfully")
+			}
 
 			target.LastSMS = time.Now().UTC()
 			db.Save(&target)
