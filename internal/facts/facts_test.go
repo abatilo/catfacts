@@ -11,4 +11,6 @@ func Test(t *testing.T) {
 	if !completion {
 		t.Error("Expected a fact to be complete, got incomplete")
 	}
+
+	t.Log(s)
 }

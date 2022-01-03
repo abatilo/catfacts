@@ -199,7 +199,7 @@ func GenerateFact(id uint) (string, bool) {
 		N:                1,
 		MaxTokens:        60,
 		Stop:             []string{"\n"},
-		Temperature:      0.5,
+		Temperature:      0.85,
 		TopP:             1,
 		PresencePenalty:  0,
 		FrequencyPenalty: 0,
