@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -166,16 +166,9 @@ func randomFact() string {
 }
 
 type completionRequest struct {
-	User             string   `json:"user"`
-	N                int      `json:"n"`
-	MaxTokens        int      `json:"max_tokens"`
-	Stop             []string `json:"stop"`
-	Temperature      float32  `json:"temperature"`
-	TopP             float32  `json:"top_p"`
-	PresencePenalty  float32  `json:"presence_penalty"`
-	FrequencyPenalty float32  `json:"frequency_penalty"`
-	Echo             bool     `json:"echo"`
-	Prompt           []string `json:"prompt"`
+	User      string `json:"user"`
+	MaxTokens int    `json:"max_tokens"`
+	Prompt    string `json:"prompt"`
 }
 
 // GenerateFact generates a random fact using go-gpt3
@@ -193,36 +186,11 @@ func GenerateFact(id uint) (string, bool) {
 	// convert id to string
 	user := strconv.Itoa(int(id))
 
-	completionURL := "https://api.openai.com/v1/engines/davinci/completions"
+	completionURL := "https://api.openai.com/v1/engines/text-davinci-001/completions"
 	completionRequest := completionRequest{
-		User:             user,
-		N:                1,
-		MaxTokens:        60,
-		Stop:             []string{"\n"},
-		Temperature:      0.85,
-		TopP:             1,
-		PresencePenalty:  0,
-		FrequencyPenalty: 0,
-		Echo:             false,
-		Prompt: []string{fmt.Sprintf(`My favorite cat facts:
-------
-%s
-------
-%s
-------
-%s
-------
-%s
-------
-%s
-------
-%s
-------
-%s
-------
-%s
-------
-`, randomFact(), randomFact(), randomFact(), randomFact(), randomFact(), randomFact(), randomFact(), randomFact())},
+		User:      user,
+		MaxTokens: 60,
+		Prompt:    "Teach me something that I didn't know about cats",
 	}
 
 	jsonBody, err := json.Marshal(completionRequest)
@@ -275,5 +243,5 @@ func GenerateFact(id uint) (string, bool) {
 		return randomFact(), false
 	}
 
-	return response.Choices[0].Text, true
+	return strings.TrimSpace(response.Choices[0].Text), true
 }
