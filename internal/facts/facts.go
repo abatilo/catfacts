@@ -190,7 +190,7 @@ func GenerateFact(id uint) (string, bool) {
 	completionRequest := completionRequest{
 		User:      user,
 		MaxTokens: 60,
-		Prompt:    "Give me a reason to not get a cat",
+		Prompt:    "Write me a poem about a cat",
 	}
 
 	jsonBody, err := json.Marshal(completionRequest)
