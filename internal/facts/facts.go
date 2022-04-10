@@ -186,7 +186,7 @@ func GenerateFact(id uint) (string, bool) {
 	// convert id to string
 	user := strconv.Itoa(int(id))
 
-	completionURL := "https://api.openai.com/v1/engines/text-davinci-001/completions"
+	completionURL := "https://api.openai.com/v1/engines/text-davinci-002/completions"
 	completionRequest := completionRequest{
 		User:      user,
 		MaxTokens: 60,
