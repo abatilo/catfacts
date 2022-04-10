@@ -28,18 +28,3 @@ jobs:
       name: catfacts-ui
       file: build/Dockerfile.frontend
       context: web/frontend/
-  clean-ghcr:
-    needs:
-      - deploy-api
-      - deploy-ui
-    name: Delete old unused container images
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete old containers
-        uses: snok/container-retention-policy@v1
-        with:
-          image-names: catfacts-api, catfacts-ui
-          cut-off: A week ago UTC
-          account-type: personal
-          token: ${{ secrets.GH_PAT }}
-          keep-at-least: 30
