@@ -189,7 +189,7 @@ func GenerateFact(id uint) (string, bool) {
 	completionURL := "https://api.openai.com/v1/engines/text-davinci-002/completions"
 	completionRequest := completionRequest{
 		User:      user,
-		MaxTokens: 180,
+		MaxTokens: 300,
 		Prompt:    "write a story about a cat",
 	}
 
