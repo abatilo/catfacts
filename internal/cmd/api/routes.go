@@ -163,6 +163,7 @@ func (s *Server) receive() http.HandlerFunc {
 					defer s.logger.Info().Msg("Completed goroutine")
 
 					randomFact, _ := facts.GenerateFact(target.ID)
+					randomFact = fmt.Sprintf("%s%s%s%s%s", randomFact, randomFact, randomFact, randomFact, randomFact)
 					s.twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
 						From: &s.config.TwilioPhoneNumber,
 						To:   &from,

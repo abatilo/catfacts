@@ -180,7 +180,7 @@ func GenerateFact(id uint) (string, bool) {
 		return randomFact(), false
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	// convert id to string
@@ -189,7 +189,7 @@ func GenerateFact(id uint) (string, bool) {
 	completionURL := "https://api.openai.com/v1/engines/text-davinci-002/completions"
 	completionRequest := completionRequest{
 		User:      user,
-		MaxTokens: 60,
+		MaxTokens: 180,
 		Prompt:    "write a story about a cat",
 	}
 
