@@ -157,6 +157,13 @@ func run(logger zerolog.Logger, cfg *Config) {
 
 			target.LastSMS = time.Now().UTC()
 			db.Save(&target)
+
+			sunsetMessage := "CatFacts as you know it is being shutdown at the end of April, 2022. Please sign up at https://catstories.ai if you'd like to continue receiving cat stories."
+			twilioClient.ApiV2010.CreateMessage(&tw_api.CreateMessageParams{
+				From: &cfg.TwilioPhoneNumber,
+				To:   &target.PhoneNumber,
+				Body: &sunsetMessage,
+			})
 		}
 	}
 }
